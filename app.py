@@ -10,7 +10,314 @@ You answer concisely and professionally.
 If a question is about construction, fit-outs, rollouts, or the company, answer in detail.
 If you don't know, say you are not sure instead of making things up."""
 
-# ---- RULE-BASED KNOWLEDGE BASE ----
+# --------------------------------------------------------------------
+# STRUCTURED KNOWLEDGE BASE
+# --------------------------------------------------------------------
+
+# Core sectors and what Paramount does there
+SECTORS = {
+    "retail": {
+        "description": (
+            "Retail formats including big-box wholesale, value retail and electronics stores. "
+            "Typical scopes cover civil works, interiors, MEP, signage coordination and rollouts."
+        ),
+        "examples": [
+            "Booker India wholesale stores (around 30,000 sq.ft. in the West)",
+            "Mr DIY outlets across pan‑India",
+            "Tata Croma stores in West and South India (around 10,000 sq.ft.)",
+        ],
+    },
+    "qsr": {
+        "description": (
+            "Quick Service Restaurant (QSR) and café formats, often high‑repeat rollouts with tight timelines "
+            "in malls and high‑street locations."
+        ),
+        "examples": [
+            "Burger King outlets pan‑India (around 2,500 sq.ft.)",
+            "Punjab Grill and YouMee restaurants pan‑India",
+            "McDonald's and Domino's outlets across multiple cities",
+            "KFC restaurants in West and South India (around 4,500 sq.ft.)",
+        ],
+    },
+    "restaurants": {
+        "description": (
+            "Architectural restaurants and bars where brand experience and detailing are critical, "
+            "with bespoke interiors and services integration."
+        ),
+        "examples": [
+            "Burma Burma (around 2,500 sq.ft., pan‑India)",
+            "Talli Turmeric (about 4,500 sq.ft. in West India)",
+            "Family Tree vegetarian restaurant in Mulund, Mumbai (about 2,500–3,100 sq.ft.)",
+            "Izumi and other premium F&B formats in Mumbai",
+        ],
+    },
+    "hospitality": {
+        "description": (
+            "Business hotels and hospitality projects with full interior, services and common area coordination."
+        ),
+        "examples": [
+            "Ginger hotel in Mumbai (around 75,500 sq.ft.)",
+            "Accor hotel project in Gujarat (around 55,000 sq.ft.)",
+        ],
+    },
+    "offices": {
+        "description": (
+            "Corporate offices with open workspaces, meeting rooms, cabins and support areas."
+        ),
+        "examples": [
+            "Nokia Siemens office (around 7,100 sq.ft. in North India)",
+            "Trafigura India office (around 7,000 sq.ft. in West India)",
+        ],
+    },
+    "residences": {
+        "description": (
+            "High‑end residences and bungalows with complete interior and services packages."
+        ),
+        "examples": [
+            "Multiple residences and bungalows in Mumbai and suburbs, "
+            "including apartments at Lodha One World and others.",
+        ],
+    },
+}
+
+# Brand-level mapping
+BRANDS = {
+    "burger king": {
+        "sector": "qsr",
+        "typical_area": "around 2,500 sq.ft. per outlet",
+        "footprint": "pan‑India across North, West, South and East cities",
+    },
+    "kfc": {
+        "sector": "qsr",
+        "typical_area": "around 4,500 sq.ft. for flagship outlets",
+        "footprint": "West and South India, including Aurangabad and other cities",
+    },
+    "mcdonald's": {
+        "sector": "qsr",
+        "typical_area": "around 2,000 sq.ft. per outlet",
+        "footprint": "pan‑India in key urban centres",
+    },
+    "domino's": {
+        "sector": "qsr",
+        "typical_area": "around 1,500 sq.ft. per store",
+        "footprint": "North and other regions via multi‑city rollouts",
+    },
+    "punjab grill": {
+        "sector": "qsr",
+        "typical_area": "around 3,000 sq.ft.",
+        "footprint": "pan‑India",
+    },
+    "youmee": {
+        "sector": "qsr",
+        "typical_area": "around 2,000 sq.ft.",
+        "footprint": "pan‑India in malls and high streets",
+    },
+    "mr diy": {
+        "sector": "retail",
+        "typical_area": "around 10,000 sq.ft.",
+        "footprint": "pan‑India value retail stores",
+    },
+    "booker": {
+        "sector": "retail",
+        "typical_area": "around 30,000 sq.ft.",
+        "footprint": "wholesale formats in West India",
+    },
+    "tata croma": {
+        "sector": "retail",
+        "typical_area": "around 10,000 sq.ft.",
+        "footprint": "West and South India",
+    },
+    "croma": {
+        "sector": "retail",
+        "typical_area": "around 10,000 sq.ft.",
+        "footprint": "West and South India",
+    },
+    "burma burma": {
+        "sector": "restaurants",
+        "typical_area": "around 2,500 sq.ft.",
+        "footprint": "pan‑India restaurant‑tea room formats",
+    },
+    "talli turmeric": {
+        "sector": "restaurants",
+        "typical_area": "around 4,500 sq.ft.",
+        "footprint": "West India (for example, Atria Mall, Mumbai)",
+    },
+    "izumi": {
+        "sector": "restaurants",
+        "typical_area": "around 2,000–2,100 sq.ft.",
+        "footprint": "Mumbai and West India",
+    },
+    "family tree": {
+        "sector": "restaurants",
+        "typical_area": "around 2,500–3,100 sq.ft.",
+        "footprint": "Mulund, Mumbai and similar urban locations",
+    },
+    "cinepolis": {
+        "sector": "hospitality",
+        "typical_area": "around 25,500 sq.ft. multiplexes",
+        "footprint": "South India",
+    },
+    "anytime fitness": {
+        "sector": "hospitality",
+        "typical_area": "around 7,500 sq.ft.",
+        "footprint": "North and West India",
+    },
+    "ginger": {
+        "sector": "hospitality",
+        "typical_area": "around 75,500 sq.ft.",
+        "footprint": "Mumbai",
+    },
+    "accor": {
+        "sector": "hospitality",
+        "typical_area": "around 55,000 sq.ft.",
+        "footprint": "Gujarat",
+    },
+}
+
+# Regions and typical cities (aligned loosely with your frontend map)
+REGIONS = {
+    "west": [
+        "Mumbai",
+        "Pune",
+        "Nagpur",
+        "Goa",
+        "Surat",
+        "Vadodara",
+        "Rajkot",
+        "Jamnagar",
+        "Aurangabad",
+        "Ankleshwar",
+    ],
+    "north": [
+        "New Delhi",
+        "Delhi",
+        "Lucknow",
+        "Kanpur",
+        "Prayagraj",
+        "Jaipur",
+        "Gurgaon",
+        "Noida",
+        "Ghaziabad",
+        "Amritsar",
+    ],
+    "south": [
+        "Chennai",
+        "Bangalore",
+        "Hyderabad",
+        "Hubli",
+        "Mangalore",
+        "Kochi",
+    ],
+    "east": [
+        "Kolkata",
+        "Guwahati",
+        "Siliguri",
+        "Ranchi",
+        "Patna",
+        "Gangtok",
+    ],
+}
+
+# Team / leadership info
+TEAM = [
+    {
+        "name": "Pradeep Singh",
+        "role": "Director – Business & Project Management",
+        "background": "BE Civil, Mumbai University; responsible for onsite project work from feasibility to final handover.",
+    },
+    {
+        "name": "Aalok Mishra",
+        "role": "Director – Contracts & Finance",
+        "background": "BE Civil, Mumbai University; leads BOQ finalisation, contracts and billing processes.",
+    },
+    # The PDF mentions >25 management staff; we summarise as a group
+]
+
+HEADCOUNT_SUMMARY = (
+    "Paramount employs more than 25 skilled management and engineering professionals, "
+    "supporting its project delivery across sectors and regions."
+)
+
+# --------------------------------------------------------------------
+# HELPER FUNCTIONS
+# --------------------------------------------------------------------
+
+
+def contains_any(text: str, keywords) -> bool:
+    return any(k in text for k in keywords)
+
+
+def detect_region(text: str):
+    for region, cities in REGIONS.items():
+        if region in text:
+            return region
+        for c in cities:
+            if c.lower() in text:
+                return region
+    return None
+
+
+def detect_brand(text: str):
+    for brand_key in BRANDS.keys():
+        if brand_key in text:
+            return brand_key
+    return None
+
+
+def describe_region(region: str) -> str:
+    cities = REGIONS.get(region, [])
+    if not cities:
+        return ""
+    city_list = ", ".join(cities[:8])
+    region_label = region.capitalize()
+    return (
+        f"In the {region_label} region, Paramount has delivered projects in cities such as "
+        f"{city_list}, with additional locations depending on brand rollout plans."
+    )
+
+
+def describe_brand(brand_key: str) -> str:
+    info = BRANDS.get(brand_key)
+    if not info:
+        return ""
+    sector = info["sector"]
+    sector_desc = SECTORS.get(sector, {}).get("description", "")
+    lines = [
+        f"Paramount has executed projects for {brand_key.title()}.",
+        f"Typical outlet area is {info['typical_area']}.",
+        f"The footprint includes {info['footprint']}.",
+    ]
+    if sector_desc:
+        lines.append(f"This falls under our {sector} sector: {sector_desc}")
+    return " ".join(lines)
+
+
+def list_sector_projects(sector_key: str) -> str:
+    sector = SECTORS.get(sector_key)
+    if not sector:
+        return ""
+    examples = "; ".join(sector["examples"])
+    return (
+        f"In {sector_key.upper()} formats, Paramount focuses on: {sector['description']} "
+        f"Representative projects include {examples}."
+    )
+
+
+def team_overview() -> str:
+    parts = []
+    for member in TEAM:
+        parts.append(
+            f"{member['name']} – {member['role']}. {member['background']}"
+        )
+    parts.append(HEADCOUNT_SUMMARY)
+    return " ".join(parts)
+
+
+# --------------------------------------------------------------------
+# MAIN REPLY FUNCTION
+# --------------------------------------------------------------------
+
+
 def generate_archana_reply(user_message: str) -> str:
     text = (user_message or "").lower().strip()
     if not text:
@@ -20,7 +327,7 @@ def generate_archana_reply(user_message: str) -> str:
         )
 
     # 1) Greetings / small talk
-    if any(w in text for w in ["hello", "hi ", "hi,", "hey", "good morning", "good evening"]):
+    if contains_any(text, ["hello", "hi ", "hi,", "hey", "good morning", "good evening"]):
         return (
             "Hello, this is Archana from Paramount Project Endeavors Pvt. Ltd. "
             "How can I support your project today?"
@@ -29,192 +336,183 @@ def generate_archana_reply(user_message: str) -> str:
     if "who are you" in text or "what are you" in text or "archana" in text:
         return (
             "I am Archana, an AI assistant for Paramount Project Endeavors Pvt. Ltd., "
-            "here to help you understand our services, rollout capabilities and project footprint."
+            "helping you understand our services, rollout capabilities, project footprint and team."
         )
 
-    # 2) Company identity / registration
-    if "company name" in text or "full name" in text or "legal name" in text:
+    # 2) Company identity and registration
+    if contains_any(text, ["company name", "legal name", "full name"]):
         return (
             "The full legal name is Paramount Project Endeavors Private Limited "
-            "(often written as Paramount Project Endeavors Pvt. Ltd.)."
+            "(Paramount Project Endeavors Pvt. Ltd.)."
         )
 
-    if "cin" in text or "company identification" in text or "registration number" in text:
+    if "cin" in text or "registration number" in text or "company identification" in text:
         return (
             "Paramount Project Endeavors Private Limited is registered in India under "
-            "CIN U74999MH2013PTC240009."  # from zaubacorp link
+            "CIN U74999MH2013PTC240009."
         )
 
-    if "when" in text and ("incorporated" in text or "founded" in text or "started" in text):
+    if contains_any(text, ["when were you incorporated", "when were you founded", "when did you start"]):
         return (
-            "Paramount Project Endeavors Pvt. Ltd. has over 10 years of practical experience, "
-            "with directors who each bring around 20 years of execution and site-management expertise."
+            "Paramount Project Endeavors Pvt. Ltd. has over a decade of operational experience, "
+            "built on the practical site and management experience of its directors and core team."
         )
 
-    if "directors" in text or "management" in text or "promoters" in text:
+    # 3) Services / what the company does
+    if (
+        "what do you do" in text
+        or "what does paramount" in text
+        or "what does the company do" in text
+        or "core business" in text
+    ):
         return (
-            "The company is led by full‑time directors including Pradeep Singh and Aalok Mishra, "
-            "both BE Civil engineers from Mumbai University, supported by a team of more than "
-            "25 skilled management personnel."  # from PDF
+            "Paramount provides professional turnkey solutions for interior fit‑outs and project rollouts. "
+            "We combine technical expertise and strong site management to take projects from concept and "
+            "design through to successful implementation, with a focus on quality, timelines and coordination."
         )
 
-    # 3) What the company does
-    if "what do you do" in text or "what does paramount" in text or "what does the company do" in text:
+    if contains_any(text, ["services", "scope of work", "capabilities", "what you offer"]):
         return (
-            "Paramount provides professional turnkey solutions for projects, combining technical "
-            "expertise and strong site management to take projects from concept and design through "
-            "to successful implementation. The focus is on quality interior execution and rollout "
-            "coordination across retail, QSR, hospitality, offices and residences."
-        )
-
-    if "services" in text or "scope of work" in text or "capabilities" in text:
-        return (
-            "Key services include project designing, interior works, civil works, MEP works including "
-            "HVAC, and allied works. The team plans project flow, implements systems and processes, "
-            "coordinates multiple stakeholders, and manages end‑to‑end delivery within agreed time, "
-            "cost and quality parameters."  # from PDF focus sectors
+            "Key services include project planning, interior works, civil works, MEP works including HVAC, "
+            "and allied packages. Paramount coordinates drawings, BOQs, vendors and approvals, and manages "
+            "end‑to‑end delivery within agreed time, cost and quality parameters."
         )
 
     if "strategy" in text or "how do you deliver" in text or "approach" in text or "process" in text:
         return (
-            "The delivery strategy is to emphasise quality and service, using well‑qualified engineers "
-            "and technicians, systematic coordination, and clear planning. Paramount follows a "
-            "professional approach from initial site meetings through project completion so that "
-            "targets stay on program and quality benchmarks are met."
+            "The delivery strategy is to emphasise quality and service through well‑qualified engineers and "
+            "technicians, systematic coordination and clear planning. We follow a professional approach from "
+            "initial site meetings through project completion so that milestones, quality checks and handovers "
+            "stay on track."
         )
 
-    # 4) Sectors and project types
-    if "sectors" in text or "verticals" in text or "industry" in text:
+    # 4) Sectors / verticals
+    if contains_any(text, ["sectors", "verticals", "industries", "which sectors"]):
         return (
-            "Paramount focuses on retail stores, quick‑service restaurants (QSR), architectural "
-            "restaurant‑bars, hotels, corporate offices and premium residences. The company also "
-            "executes multiplexes, fitness centres and other specialised interior projects."
+            "Paramount works across retail stores, quick‑service restaurants (QSR), architectural restaurants "
+            "and bars, hotels, corporate offices and high‑end residences. In addition, the team has experience "
+            "with multiplexes, fitness centres and other specialised interior projects."
         )
 
-    if "retail" in text or "store" in text or "croma" in text or "mr diy" in text or "booker" in text:
-        return (
-            "In retail, Paramount has delivered stores such as Booker India wholesale formats, "
-            "Mr DIY outlets and Tata Croma electronics stores, typically in the 10,000–30,000 sq.ft. "
-            "range across West and South India."
-        )
+    # Sector‑specific questions
+    if "retail" in text:
+        return list_sector_projects("retail")
 
-    if "qsr" in text or "quick service" in text or "restaurant" in text or "food" in text:
-        return (
-            "In quick‑service and restaurant formats, Paramount has executed outlets for Burger King, "
-            "Punjab Grill, YouMee, McDonald's, Domino's and KFC, generally between about 1,500 and "
-            "4,500 sq.ft., including pan‑India rollouts for several of these brands."
-        )
+    if "qsr" in text or "quick service" in text:
+        return list_sector_projects("qsr")
 
-    if "hospitality" in text or "hotel" in text or "ginger" in text or "accor" in text:
-        return (
-            "In hospitality, Paramount has handled hotel projects such as Ginger Mumbai and Accor in "
-            "Gujarat, with built‑up areas around 55,000–75,000 sq.ft., covering full interior and "
-            "services coordination."
-        )
+    if contains_any(text, ["restaurant", "restro", "bar", "f&b"]):
+        return list_sector_projects("restaurants")
 
-    if "office" in text or "corporate" in text or "nokia" in text or "trafigura" in text:
-        return (
-            "For corporate offices, Paramount has delivered projects for clients such as Nokia Siemens "
-            "and Trafigura India, with floor plates around 7,000 sq.ft., including partitions, "
-            "workstations, conference rooms, ceilings, flooring, electrical and allied works."
-        )
+    if "hotel" in text or "hospitality" in text:
+        return list_sector_projects("hospitality")
+
+    if "office" in text or "corporate" in text or "workspace" in text:
+        return list_sector_projects("offices")
 
     if "residence" in text or "bungalow" in text or "apartment" in text or "home interiors" in text:
+        return list_sector_projects("residences")
+
+    # 5) Brands
+    brand_key = detect_brand(text)
+    if brand_key:
+        return describe_brand(brand_key)
+
+    if contains_any(text, ["which brands", "list your brands", "client brands", "who have you worked for"]):
+        brand_names = sorted({b.title() for b in BRANDS.keys()})
+        sample = ", ".join(brand_names[:15])
         return (
-            "Paramount has also executed high‑end residential interiors for bungalows and apartments "
-            "in and around Mumbai and its suburbs, handling civil modifications, false ceilings, "
-            "carpentry, finishes and services as turnkey packages."
+            f"Paramount has delivered projects for brands such as {sample}, and others across retail, "
+            "QSR, hospitality and corporate formats."
         )
 
-    # 5) Example projects / “best works”
-    if "best works" in text or "sample projects" in text or "case studies" in text:
-        return (
-            "Some highlighted works include Burma Burma, Talli Turmeric, Izumi, Family Tree vegetarian "
-            "restaurant, KFC at Nirala Bazaar in Aurangabad, and multiple Croma, Mr DIY and QSR outlets. "
-            "Typical restaurant areas range from about 2,000 to 4,500 sq.ft. with build times around "
-            "60–70 days for individual outlets."
-        )
+    # 6) Locations / cities / regions
+    if contains_any(text, ["cities", "locations", "where do you work", "pan india", "pan-india"]):
+        parts = [
+            "Paramount manages projects across India, with strong presence in West, North, South and East regions.",
+            describe_region("west"),
+            describe_region("north"),
+            describe_region("south"),
+            describe_region("east"),
+        ]
+        return " ".join(p for p in parts if p)
 
-    if "kfc" in text:
-        return (
-            "A representative KFC restaurant executed by Paramount was at Nirala Bazaar in Aurangabad, "
-            "Maharashtra, with a total area of about 4,500 sq.ft. and a completion time of roughly 70 days."
-        )
+    region = detect_region(text)
+    if region:
+        return describe_region(region)
 
-    if "family tree" in text:
-        return (
-            "The Family Tree vegetarian restaurant at Mulund, Mumbai, was delivered by Paramount over "
-            "approximately 60 days, for a total area of around 2,500–3,100 sq.ft."
-        )
-
-    # 6) Locations, pan‑India footprint, brands list
-    if "locations" in text or "cities" in text or "where do you work" in text or "pan india" in text:
-        return (
-            "Paramount manages projects across India, with a strong presence in Mumbai and the West, "
-            "North‑India rollouts, and work in South and East regions. The interactive map and clients "
-            "directory on the website show detailed city‑wise markers by brand."
-        )
-
-    if "brands" in text or "clients" in text or "who have you worked for" in text:
-        return (
-            "Paramount has delivered projects for brands such as Burger King, KFC, McDonald's, Domino's, "
-            "Punjab Grill, YouMee, Mr DIY, Tata Croma, Cinepolis, Anytime Fitness, Burma Burma, Izumi and "
-            "others, along with hotel chains, corporate offices and residential clients."
-        )
-
-    # 7) How to engage / timelines / process questions
-    if "how do i start" in text or "engage" in text or "next step" in text or "rfp" in text or "tender" in text:
-        return (
-            "You can start by sharing basic project details – location, approximate area, format "
-            "(retail, QSR, office, hotel or residence) and any available drawings or BOQ. "
-            "Paramount will then review scope, advise on timelines and sequencing, and propose a "
-            "delivery approach aligned to your rollout plan."
-        )
-
+    # 7) Timelines / schedule / budget
     if "timeline" in text or "how long" in text or "duration" in text or "schedule" in text:
         return (
-            "Typical single‑site restaurant or retail fit‑outs are executed in roughly 60–10 weeks "
-            "depending on scope, approvals and site conditions. Larger hospitality or multi‑floor "
-            "projects can run longer, but Paramount plans sequencing so civil, interiors and MEP progress "
-            "in parallel where possible."
+            "Typical single‑site restaurant or retail fit‑outs are executed in roughly 6–10 weeks, depending on "
+            "scope, mall approvals and site conditions. Larger hotel or multi‑floor projects can run longer, "
+            "but Paramount sequences civil, interiors and MEP so that activities run in parallel wherever possible."
         )
 
     if "cost" in text or "budget" in text or "rates" in text or "pricing" in text:
         return (
-            "Exact pricing depends on city, scope, specifications and services. Paramount usually works "
-            "against drawings and BOQs or a defined scope, and can support value‑engineering while "
-            "maintaining brand standards. For a directional estimate, it is best to share basic drawings "
-            "and a brief via the contact form."
+            "Exact pricing depends on city, scope, specifications and services. Paramount normally works against "
+            "drawings and BOQs or a defined scope, and can support value‑engineering while maintaining brand "
+            "standards. For a directional estimate, it is best to share basic drawings and a brief via the "
+            "website contact form."
         )
 
-    # 8) Contact details / offices
+    # 8) How to engage / next steps
+    if contains_any(text, ["how do i start", "engage you", "start a project", "next step", "rfp", "tender"]):
+        return (
+            "To start, you can share basic project details – location, approximate area, format "
+            "(retail, QSR, office, hotel or residence) and any available drawings or BOQ. "
+            "Paramount will then review the scope, outline timelines and suggest a delivery "
+            "approach aligned to your rollout or opening plan."
+        )
+
+    # 9) Team / staff / directors
+    if "team" in text or "staff" in text or "who works" in text:
+        return team_overview()
+
+    if "directors" in text or "management" in text or "promoters" in text:
+        return (
+            "The company is led by full‑time directors including Pradeep Singh and Aalok Mishra, "
+            "both BE Civil engineers from Mumbai University. Pradeep Singh oversees on‑site project "
+            "work from feasibility to handover, while Aalok Mishra leads contracts, BOQs and billing. "
+            f"{HEADCOUNT_SUMMARY}"
+        )
+
+    # 10) Contact details
     if "contact" in text or "phone" in text or "email" in text or "office address" in text:
         return (
             "You can reach Paramount at the Mumbai head office: 13A, 3rd Floor, Ajay Apartments, "
             "Next to Ruia Hall, Anand Road, Malad West, Mumbai – 400064, phone +91‑22‑2881 2177, "
             "mobile +91 9920479027, email info@ppepl.co.in. The North office is at Plot No. 70/60, "
-            "Upper Ground Floor, Mangolpuri, New Delhi – 110085."
+            "Upper Ground Floor, Mangolpuri, New Delhi – 110085. You can also use the contact form "
+            "on the website to share project details."
         )
 
-    # 9) Website / where to see more
+    # 11) Website / profile
     if "website" in text or "profile" in text or "company profile" in text:
         return (
-            "You can explore the full company profile and live project map at "
+            "You can explore the live profile, map and sample works at "
             "https://esingh16.github.io/Paramount-Projects-Endeavors-Pvt.-Ltd/ "
-            "and request the detailed PDF profile for reference."
+            "and request the detailed PDF company profile for internal reference."
         )
 
-    # 10) Fallback generic answer
+    # 12) Fallback
     return (
         "Archana here. I may not have full context for that question, but you can ask me about "
-        "Paramount's services, rollout capabilities, focus sectors, project examples, city coverage "
-        "or how to get in touch for a new project."
+        "Paramount's services, rollout capabilities, focus sectors, project examples, city coverage, "
+        "team or how to get in touch for a new project."
     )
 
-# ---- ROUTES ----
+
+# --------------------------------------------------------------------
+# ROUTES
+# --------------------------------------------------------------------
+
+
 @app.route("/")
 def health():
     return jsonify({"status": "ok", "assistant": "Archana"})
+
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -222,6 +520,7 @@ def chat():
     message = data.get("message", "")
     reply = generate_archana_reply(message)
     return jsonify({"assistant_name": "Archana", "reply": reply})
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
