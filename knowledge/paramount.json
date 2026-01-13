@@ -1,0 +1,42 @@
+{
+  "company": {
+    "name": "Paramount Project Endeavors Pvt Ltd",
+    "type": "Private Unlisted Indian Non-Government Company",
+    "cin": "U74999MH2013PTC240009",
+    "status": "Active",
+    "incorporated_on": "2013-01-28",
+    "location_city": "Mumbai",
+    "location_state": "Maharashtra",
+    "location_details": "Registered at Malad West, Mumbai, Maharashtra, India",
+    "usp": "Provides specialized, end-to-end project execution and interior fit-out services with strong focus on timely and quality completion."
+  },
+  "services": [
+    "Civil interior fit-out works",
+    "Electrical works",
+    "Fire fighting systems",
+    "HVAC (heating, ventilation and air conditioning)",
+    "Plumbing",
+    "Customized project execution services for large retail and commercial clients"
+  ],
+  "clients": [
+    "Burma Burma",
+    "Burger King",
+    "Dominos",
+    "KFC",
+    "Cinepolis",
+    "Trafigura India",
+    "YUM"
+  ],
+  "directors": [
+    "Alok Mishra",
+    "Pradeep Singh"
+  ],
+  "positioning": {
+    "summary": "Paramount Project Endeavors Pvt Ltd is a Mumbai-based company providing specialized interior fit-out and project execution services for major retail and commercial brands, with an emphasis on on-time and quality delivery.",
+    "strengths": [
+      "End-to-end execution capabilities (civil, electrical, HVAC, plumbing, fire-fighting)",
+      "Experience with large, multi-location retail brands",
+      "Focus on timely completion and consistent quality"
+    ]
+  }
+}
