@@ -1,17 +1,23 @@
 import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from openai import OpenAI  # NEW
 
 app = Flask(__name__)
 CORS(app)  # allow your static site to call this API
 
+# OpenAI client (reads OPENAI_API_KEY from environment)
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY", ""))
+
 SYSTEM_PROMPT = """You are Archana, an AI assistant for Paramount Project Endeavors Pvt. Ltd.
 You answer concisely and professionally.
-If a question is about construction, fit-outs, rollouts, or the company, answer in detail.
-If you don't know, say you are not sure instead of making things up."""
+You focus on Paramount's services, projects, brands, cities, team, and how to engage.
+If a question is not related to Paramount or construction/fit-outs, politely say it is outside your scope.
+Use the structured company data provided to you as reliable context, and don't invent facts.
+"""
 
 # --------------------------------------------------------------------
-# STRUCTURED KNOWLEDGE BASE
+# STRUCTURED KNOWLEDGE BASE (same as before)
 # --------------------------------------------------------------------
 
 # Core sectors and what Paramount does there
@@ -174,7 +180,7 @@ BRANDS = {
     },
 }
 
-# Regions and typical cities (aligned loosely with your frontend map)
+# Regions and typical cities
 REGIONS = {
     "west": [
         "Mumbai",
@@ -230,7 +236,6 @@ TEAM = [
         "role": "Director – Contracts & Finance",
         "background": "BE Civil, Mumbai University; leads BOQ finalisation, contracts and billing processes.",
     },
-    # The PDF mentions >25 management staff; we summarise as a group
 ]
 
 HEADCOUNT_SUMMARY = (
@@ -239,7 +244,7 @@ HEADCOUNT_SUMMARY = (
 )
 
 # --------------------------------------------------------------------
-# HELPER FUNCTIONS
+# HELPER FUNCTIONS (unchanged)
 # --------------------------------------------------------------------
 
 
@@ -313,195 +318,93 @@ def team_overview() -> str:
     return " ".join(parts)
 
 
+# Build a compact textual context from the structured data for the LLM
+def build_structured_context() -> str:
+    lines = []
+
+    # Sectors
+    for key, val in SECTORS.items():
+        lines.append(f"Sector {key}: {val['description']}")
+        lines.append("Examples: " + "; ".join(val["examples"]))
+
+    # Brands
+    for key, val in BRANDS.items():
+        lines.append(
+            f"Brand {key}: sector={val['sector']}, typical_area={val['typical_area']}, "
+            f"footprint={val['footprint']}"
+        )
+
+    # Regions
+    for region, cities in REGIONS.items():
+        lines.append(f"Region {region}: cities such as {', '.join(cities)}")
+
+    # Team
+    lines.append("Team: " + team_overview())
+
+    return "\n".join(lines)
+
+
+STRUCTURED_CONTEXT = build_structured_context()
+
+
 # --------------------------------------------------------------------
-# MAIN REPLY FUNCTION
+# MAIN REPLY FUNCTION – NOW LLM-BASED
 # --------------------------------------------------------------------
 
 
 def generate_archana_reply(user_message: str) -> str:
-    text = (user_message or "").lower().strip()
+    text = (user_message or "").strip()
     if not text:
         return (
             "Namaste, I am Archana, your AI assistant for Paramount Project "
             "Endeavors Pvt. Ltd. How can I help you today?"
         )
 
-    # 1) Greetings / small talk
-    if contains_any(text, ["hello", "hi ", "hi,", "hey", "good morning", "good evening"]):
-        return (
-            "Hello, this is Archana from Paramount Project Endeavors Pvt. Ltd. "
-            "How can I support your project today?"
-        )
-
-    if "who are you" in text or "what are you" in text or "archana" in text:
-        return (
-            "I am Archana, an AI assistant for Paramount Project Endeavors Pvt. Ltd., "
-            "helping you understand our services, rollout capabilities, project footprint and team."
-        )
-
-    # 2) Company identity and registration
-    if contains_any(text, ["company name", "legal name", "full name"]):
-        return (
-            "The full legal name is Paramount Project Endeavors Private Limited "
-            "(Paramount Project Endeavors Pvt. Ltd.)."
-        )
-
-    if "cin" in text or "registration number" in text or "company identification" in text:
-        return (
-            "Paramount Project Endeavors Private Limited is registered in India under "
-            "CIN U74999MH2013PTC240009."
-        )
-
-    if contains_any(text, ["when were you incorporated", "when were you founded", "when did you start"]):
-        return (
-            "Paramount Project Endeavors Pvt. Ltd. has over a decade of operational experience, "
-            "built on the practical site and management experience of its directors and core team."
-        )
-
-    # 3) Services / what the company does
-    if (
-        "what do you do" in text
-        or "what does paramount" in text
-        or "what does the company do" in text
-        or "core business" in text
-    ):
-        return (
-            "Paramount provides professional turnkey solutions for interior fit‑outs and project rollouts. "
-            "We combine technical expertise and strong site management to take projects from concept and "
-            "design through to successful implementation, with a focus on quality, timelines and coordination."
-        )
-
-    if contains_any(text, ["services", "scope of work", "capabilities", "what you offer"]):
-        return (
-            "Key services include project planning, interior works, civil works, MEP works including HVAC, "
-            "and allied packages. Paramount coordinates drawings, BOQs, vendors and approvals, and manages "
-            "end‑to‑end delivery within agreed time, cost and quality parameters."
-        )
-
-    if "strategy" in text or "how do you deliver" in text or "approach" in text or "process" in text:
-        return (
-            "The delivery strategy is to emphasise quality and service through well‑qualified engineers and "
-            "technicians, systematic coordination and clear planning. We follow a professional approach from "
-            "initial site meetings through project completion so that milestones, quality checks and handovers "
-            "stay on track."
-        )
-
-    # 4) Sectors / verticals
-    if contains_any(text, ["sectors", "verticals", "industries", "which sectors"]):
-        return (
-            "Paramount works across retail stores, quick‑service restaurants (QSR), architectural restaurants "
-            "and bars, hotels, corporate offices and high‑end residences. In addition, the team has experience "
-            "with multiplexes, fitness centres and other specialised interior projects."
-        )
-
-    # Sector‑specific questions
-    if "retail" in text:
-        return list_sector_projects("retail")
-
-    if "qsr" in text or "quick service" in text:
-        return list_sector_projects("qsr")
-
-    if contains_any(text, ["restaurant", "restro", "bar", "f&b"]):
-        return list_sector_projects("restaurants")
-
-    if "hotel" in text or "hospitality" in text:
-        return list_sector_projects("hospitality")
-
-    if "office" in text or "corporate" in text or "workspace" in text:
-        return list_sector_projects("offices")
-
-    if "residence" in text or "bungalow" in text or "apartment" in text or "home interiors" in text:
-        return list_sector_projects("residences")
-
-    # 5) Brands
-    brand_key = detect_brand(text)
+    # Lightweight intent hints for brands/regions to help the model
+    lower = text.lower()
+    hints = []
+    brand_key = detect_brand(lower)
     if brand_key:
-        return describe_brand(brand_key)
-
-    if contains_any(text, ["which brands", "list your brands", "client brands", "who have you worked for"]):
-        brand_names = sorted({b.title() for b in BRANDS.keys()})
-        sample = ", ".join(brand_names[:15])
-        return (
-            f"Paramount has delivered projects for brands such as {sample}, and others across retail, "
-            "QSR, hospitality and corporate formats."
-        )
-
-    # 6) Locations / cities / regions
-    if contains_any(text, ["cities", "locations", "where do you work", "pan india", "pan-india"]):
-        parts = [
-            "Paramount manages projects across India, with strong presence in West, North, South and East regions.",
-            describe_region("west"),
-            describe_region("north"),
-            describe_region("south"),
-            describe_region("east"),
-        ]
-        return " ".join(p for p in parts if p)
-
-    region = detect_region(text)
+        hints.append("User is asking about brand: " + brand_key)
+    region = detect_region(lower)
     if region:
-        return describe_region(region)
+        hints.append("User is asking about region: " + region)
 
-    # 7) Timelines / schedule / budget
-    if "timeline" in text or "how long" in text or "duration" in text or "schedule" in text:
-        return (
-            "Typical single‑site restaurant or retail fit‑outs are executed in roughly 6–10 weeks, depending on "
-            "scope, mall approvals and site conditions. Larger hotel or multi‑floor projects can run longer, "
-            "but Paramount sequences civil, interiors and MEP so that activities run in parallel wherever possible."
+    hint_text = "\n".join(hints) if hints else "No specific brand/region detected."
+
+    try:
+        completion = client.chat.completions.create(
+            model="gpt-4.1-mini",
+            temperature=0.2,
+            max_tokens=400,
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {
+                    "role": "system",
+                    "content": (
+                        "Structured company data for Paramount Project Endeavors Pvt. Ltd:\n"
+                        + STRUCTURED_CONTEXT
+                    ),
+                },
+                {
+                    "role": "system",
+                    "content": "Helper hints: " + hint_text,
+                },
+                {"role": "user", "content": text},
+            ],
         )
-
-    if "cost" in text or "budget" in text or "rates" in text or "pricing" in text:
+        reply = completion.choices[0].message.content.strip()
+        if not reply:
+            return (
+                "Archana here. I could not generate a detailed response just now; "
+                "please try asking your question again in a moment."
+            )
+        return reply
+    except Exception:
         return (
-            "Exact pricing depends on city, scope, specifications and services. Paramount normally works against "
-            "drawings and BOQs or a defined scope, and can support value‑engineering while maintaining brand "
-            "standards. For a directional estimate, it is best to share basic drawings and a brief via the "
-            "website contact form."
+            "Archana here. I am temporarily unavailable due to a backend error. "
+            "Please try again after some time."
         )
-
-    # 8) How to engage / next steps
-    if contains_any(text, ["how do i start", "engage you", "start a project", "next step", "rfp", "tender"]):
-        return (
-            "To start, you can share basic project details – location, approximate area, format "
-            "(retail, QSR, office, hotel or residence) and any available drawings or BOQ. "
-            "Paramount will then review the scope, outline timelines and suggest a delivery "
-            "approach aligned to your rollout or opening plan."
-        )
-
-    # 9) Team / staff / directors
-    if "team" in text or "staff" in text or "who works" in text:
-        return team_overview()
-
-    if "directors" in text or "management" in text or "promoters" in text:
-        return (
-            "The company is led by full‑time directors including Pradeep Singh and Aalok Mishra, "
-            "both BE Civil engineers from Mumbai University. Pradeep Singh oversees on‑site project "
-            "work from feasibility to handover, while Aalok Mishra leads contracts, BOQs and billing. "
-            f"{HEADCOUNT_SUMMARY}"
-        )
-
-    # 10) Contact details
-    if "contact" in text or "phone" in text or "email" in text or "office address" in text:
-        return (
-            "You can reach Paramount at the Mumbai head office: 13A, 3rd Floor, Ajay Apartments, "
-            "Next to Ruia Hall, Anand Road, Malad West, Mumbai – 400064, phone +91‑22‑2881 2177, "
-            "mobile +91 9920479027, email info@ppepl.co.in. The North office is at Plot No. 70/60, "
-            "Upper Ground Floor, Mangolpuri, New Delhi – 110085. You can also use the contact form "
-            "on the website to share project details."
-        )
-
-    # 11) Website / profile
-    if "website" in text or "profile" in text or "company profile" in text:
-        return (
-            "You can explore the live profile, map and sample works at "
-            "https://esingh16.github.io/Paramount-Projects-Endeavors-Pvt.-Ltd/ "
-            "and request the detailed PDF company profile for internal reference."
-        )
-
-    # 12) Fallback
-    return (
-        "Archana here. I may not have full context for that question, but you can ask me about "
-        "Paramount's services, rollout capabilities, focus sectors, project examples, city coverage, "
-        "team or how to get in touch for a new project."
-    )
 
 
 # --------------------------------------------------------------------
