@@ -1,7 +1,8 @@
 import os
+import traceback
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from openai import OpenAI  # NEW
+from openai import OpenAI  # OpenAI client
 
 app = Flask(__name__)
 CORS(app)  # allow your static site to call this API
@@ -17,10 +18,9 @@ Use the structured company data provided to you as reliable context, and don't i
 """
 
 # --------------------------------------------------------------------
-# STRUCTURED KNOWLEDGE BASE (same as before)
+# STRUCTURED KNOWLEDGE BASE
 # --------------------------------------------------------------------
 
-# Core sectors and what Paramount does there
 SECTORS = {
     "retail": {
         "description": (
@@ -86,7 +86,6 @@ SECTORS = {
     },
 }
 
-# Brand-level mapping
 BRANDS = {
     "burger king": {
         "sector": "qsr",
@@ -180,7 +179,6 @@ BRANDS = {
     },
 }
 
-# Regions and typical cities
 REGIONS = {
     "west": [
         "Mumbai",
@@ -224,7 +222,6 @@ REGIONS = {
     ],
 }
 
-# Team / leadership info
 TEAM = [
     {
         "name": "Pradeep Singh",
@@ -244,7 +241,7 @@ HEADCOUNT_SUMMARY = (
 )
 
 # --------------------------------------------------------------------
-# HELPER FUNCTIONS (unchanged)
+# HELPERS
 # --------------------------------------------------------------------
 
 
@@ -318,37 +315,26 @@ def team_overview() -> str:
     return " ".join(parts)
 
 
-# Build a compact textual context from the structured data for the LLM
 def build_structured_context() -> str:
     lines = []
-
-    # Sectors
     for key, val in SECTORS.items():
         lines.append(f"Sector {key}: {val['description']}")
         lines.append("Examples: " + "; ".join(val["examples"]))
-
-    # Brands
     for key, val in BRANDS.items():
         lines.append(
             f"Brand {key}: sector={val['sector']}, typical_area={val['typical_area']}, "
             f"footprint={val['footprint']}"
         )
-
-    # Regions
     for region, cities in REGIONS.items():
         lines.append(f"Region {region}: cities such as {', '.join(cities)}")
-
-    # Team
     lines.append("Team: " + team_overview())
-
     return "\n".join(lines)
 
 
 STRUCTURED_CONTEXT = build_structured_context()
 
-
 # --------------------------------------------------------------------
-# MAIN REPLY FUNCTION – NOW LLM-BASED
+# MAIN REPLY FUNCTION (LLM)
 # --------------------------------------------------------------------
 
 
@@ -360,7 +346,6 @@ def generate_archana_reply(user_message: str) -> str:
             "Endeavors Pvt. Ltd. How can I help you today?"
         )
 
-    # Lightweight intent hints for brands/regions to help the model
     lower = text.lower()
     hints = []
     brand_key = detect_brand(lower)
@@ -369,7 +354,6 @@ def generate_archana_reply(user_message: str) -> str:
     region = detect_region(lower)
     if region:
         hints.append("User is asking about region: " + region)
-
     hint_text = "\n".join(hints) if hints else "No specific brand/region detected."
 
     try:
@@ -386,10 +370,7 @@ def generate_archana_reply(user_message: str) -> str:
                         + STRUCTURED_CONTEXT
                     ),
                 },
-                {
-                    "role": "system",
-                    "content": "Helper hints: " + hint_text,
-                },
+                {"role": "system", "content": "Helper hints: " + hint_text},
                 {"role": "user", "content": text},
             ],
         )
@@ -400,12 +381,13 @@ def generate_archana_reply(user_message: str) -> str:
                 "please try asking your question again in a moment."
             )
         return reply
-    except Exception:
+    except Exception as e:
+        print("ARCHANA ERROR:", e)
+        traceback.print_exc()
         return (
             "Archana here. I am temporarily unavailable due to a backend error. "
             "Please try again after some time."
         )
-
 
 # --------------------------------------------------------------------
 # ROUTES
